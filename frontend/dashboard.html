@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dashboard - ASSETTO Asset Management</title>
+
+  <!-- Favicons -->
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="android-chrome-192x192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="android-chrome-512x512.png">
+  <meta name="theme-color" content="#6a5af9">
+
+  <link rel="stylesheet" href="styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    :root{
+      --primary-color: #6366f1;
+      --secondary-color: #8b5cf6;
+      --bg-color: #f8f9fa;
+      --card-bg: #ffffff;
+      --text-primary: #1f2937;
+      --text-secondary: #6b7280;
+      --border-color: #e5e7eb;
+      --hover-bg: #f3f4f6;
+      --shadow-md: 0 6px 18px rgba(0,0,0,0.08);
+    }
+    body.dark-theme{
+      --bg-color: #0b1220;
+      --card-bg: #111827;
+      --text-primary: #f9fafb;
+      --text-secondary: #cbd5e1;
+      --border-color: #1f2937;
+      --hover-bg: #172036;
+    }
+
+    .top-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 25px;
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-primary);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+
+    .header-left { display:flex; align-items:center; gap:15px; }
+    .header-left h1 { font-size:1.3rem; font-weight:600; color:var(--text-primary); margin:0; }
+    .header-right { display:flex; align-items:center; gap:20px; position:relative; }
+
+    .user-profile {
+      display:flex; align-items:center; gap:10px; cursor:pointer;
+      background: var(--hover-bg); padding:6px 12px; border-radius:8px;
+    }
+    .user-icon { width:38px; height:38px; border-radius:50%; object-fit:cover; border:2px solid var(--primary-color); }
+    .user-name { font-weight:500; font-size:0.95rem; color:var(--text-primary); }
+
+    .dropdown-menu {
+      position:absolute; top:56px; right:0; min-width:180px;
+      background:var(--card-bg); border:1px solid var(--border-color);
+      border-radius:8px; box-shadow:var(--shadow-md); display:none; flex-direction:column; overflow:hidden;
+    }
+    .dropdown-menu.show{ display:flex; }
+    .dropdown-menu button, .dropdown-menu label {
+      background:none; border:none; padding:10px 14px; text-align:left; cursor:pointer; font-size:14px; color:var(--text-primary);
+    }
+    .dropdown-menu button:hover, .dropdown-menu label:hover { background:var(--hover-bg); color:var(--primary-color); }
+
+    .modal {
+      display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45);
+      align-items:center; justify-content:center; z-index:2000;
+    }
+    .modal.show{ display:flex; }
+    .modal-card {
+      width: 100%; max-width:520px; background:var(--card-bg); border-radius:12px; padding:18px; box-shadow:var(--shadow-md);
+    }
+
+    .modal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+    .modal-title { font-weight:600; color:var(--text-primary); }
+    .modal-body { margin-bottom:12px; }
+    .modal-footer { display:flex; gap:10px; justify-content:flex-end; }
+
+    .form-row { display:flex; gap:10px; margin-bottom:10px; }
+    .form-group { display:flex; flex-direction:column; flex:1; }
+    .form-group label { font-size:13px; color:var(--text-secondary); margin-bottom:6px; }
+    .form-group input, .form-group select, .form-group textarea {
+      padding:8px 10px; border-radius:8px; border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-primary);
+    }
+    textarea { resize:vertical; min-height:80px; }
+
+    @media (max-width:600px){
+      .form-row{ flex-direction:column; }
+      .modal-card{ margin: 0 12px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard-container">
+    <aside class="sidebar">
+      <div class="sidebar-header"><h2 class="logo">ASSETTO</h2></div>
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-item active" data-target="dashboard"><i class="fas fa-th-large"></i> Dashboard</a>
+        <a href="#" class="nav-item" data-target="assets"><i class="fas fa-desktop"></i> Assets</a>
+        <a href="#" class="nav-item" data-target="vendors"><i class="fas fa-truck"></i> Vendors</a>
+        <a href="#" class="nav-item" data-target="products"><i class="fas fa-box"></i> Products</a>
+        <a href="#" class="nav-item" data-target="users"><i class="fas fa-users"></i> Users</a>
+        <a href="#" class="nav-item" data-target="recyclebin"><i class="fas fa-recycle"></i> Recycle Bin</a>
+        <a href="#" class="nav-item" data-target="support"><i class="fas fa-headset"></i> Support</a>
+        <a href="#" class="nav-item" data-target="notifications"><i class="fas fa-bell"></i> Notifications</a>
+      </nav>
+    </aside>
+
+    <div class="main-content">
+      <header class="top-header">
+        <div class="header-left">
+          <h1>ASSETTO Dashboard</h1>
+          <button id="themeToggle" class="btn"><i class="fas fa-moon"></i></button>
+        </div>
+
+        <div class="header-right">
+          <div class="user-profile" id="userMenuToggle">
+            <img id="userAvatar" class="user-icon" src="android-chrome-192x192.png" alt="user" />
+            <span class="user-name">Ishan Pandya</span>
+          </div>
+
+          <div class="dropdown-menu" id="userDropdown">
+            <button id="viewProfileBtn">👤 View Profile</button>
+            <button id="openEditPhotoBtn">🖼 Edit Photo</button>
+            <button id="logoutBtn">🚪 Logout</button>
+          </div>
+        </div>
+      </header>
+
+      <main>
+        <!-- Dashboard Section -->
+        <section id="dashboard" class="section active">
+          <div class="dashboard-cards">
+            <div class="card"><h3>Total Assets</h3><p id="totalAssets">0</p></div>
+            <div class="card"><h3>Total Vendors</h3><p id="totalVendors">0</p></div>
+            <div class="card"><h3>Total Products</h3><p id="totalProducts">0</p></div>
+            <div class="card"><h3>Total Users</h3><p id="totalUsers">0</p></div>
+          </div>
+          <canvas id="dashboardChart" style="margin-top:30px;"></canvas>
+        </section>
+
+        <!-- 1️⃣ Assets -->
+        <section id="assets" class="section">
+          <h2>Assets</h2>
+          <div class="table-container">
+            <table class="demo-table">
+              <thead><tr><th>#</th><th>Name</th><th>Type</th><th>Assigned To</th><th>Status</th><th>Purchase Date</th><th>Actions</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 2️⃣ Vendors -->
+        <section id="vendors" class="section">
+          <h2>Vendors</h2>
+          <div class="table-container">
+            <table class="demo-table">
+              <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Phone</th><th>Company</th><th>Actions</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 3️⃣ Products -->
+        <section id="products" class="section">
+          <h2>Products</h2>
+          <div class="table-container">
+            <table class="demo-table">
+              <thead><tr><th>#</th><th>Name</th><th>Category</th><th>Price</th><th>Vendor</th><th>Quantity</th><th>Actions</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 4️⃣ Users -->
+        <section id="users" class="section">
+          <h2>Users</h2>
+          <div class="table-container">
+            <table class="demo-table">
+              <thead><tr><th>#</th><th>Username</th><th>Role</th><th>Email</th><th>Password</th><th>Actions</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+        <!-- ♻️ Recycle Bin -->
+<section id="recyclebin" class="section">
+  <h2>Recycle Bin</h2>
+  <button onclick="loadRecycleBin()" class="btn" style="margin-bottom:15px;">🔄 Refresh Recycle Bin</button>
+  <div id="recycleBinContainer" class="recyclebin-container"></div>
+</section>
+
+
+        <!-- 6️⃣ Support -->
+        <section id="support" class="section">
+          <h2>Support</h2>
+
+          <div class="support-contact">
+            <p><strong>Contact Person:</strong> Ishan Pandya</p>
+            <p>Email: <a href="mailto:Ishanpandya101@gmail.com">Ishanpandya101@gmail.com</a></p>
+          </div>
+
+          <h3 style="margin-top:20px;">🧾 Submit a New Support Ticket</h3>
+          <form id="supportForm" style="max-width:500px;margin-top:10px;">
+            <div class="form-group">
+              <label for="supportName">Name</label>
+              <input type="text" id="supportName" value="Ishan Pandya" readonly />
+            </div>
+            <div class="form-group">
+              <label for="supportEmail">Email</label>
+              <input type="email" id="supportEmail" value="Ishanpandya101@gmail.com" readonly />
+            </div>
+            <div class="form-group">
+              <label for="supportSubject">Subject</label>
+              <input type="text" id="supportSubject" placeholder="Enter subject" required />
+            </div>
+            <div class="form-group">
+              <label for="supportMessage">Message</label>
+              <textarea id="supportMessage" placeholder="Describe your issue..." required></textarea>
+            </div>
+            <button type="submit" class="btn">Submit Ticket</button>
+          </form>
+
+          <h3 style="margin-top:30px;">📂 Submitted Tickets</h3>
+          <div class="table-container">
+            <table class="demo-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Subject</th>
+                  <th>Message</th>
+                  <th>Status</th>
+                  <th>Created</th>
+                </tr>
+              </thead>
+              <tbody id="supportTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <<!-- 7️⃣ Notifications -->
+<section id="notifications" class="section">
+  <h2>🔔 Notifications</h2>
+  <button onclick="loadNotifications()" class="btn" style="margin-bottom:15px;">🔄 Refresh Notifications</button>
+  <div id="notificationsContainer" class="notifications-container"></div>
+</section>
+
+
+  <!-- ======== CRUD Modal (Add/Edit) ======== -->
+  <div class="modal" id="crudModal" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title" id="crudModalTitle">Add Item</div>
+        <button id="crudModalClose" class="btn" style="background:#ef4444">Close</button>
+      </div>
+      <div class="modal-body" id="crudModalBody">
+        <!-- dynamic form injected here -->
+      </div>
+      <div class="modal-footer">
+        <button id="crudCancel" class="btn" style="background:#9ca3af">Cancel</button>
+        <button id="crudSave" class="btn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======== Edit Photo Modal ======== -->
+  <div class="modal" id="photoModal" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">Edit Profile Photo</div>
+        <button id="photoClose" class="btn" style="background:#ef4444">Close</button>
+      </div>
+      <div class="modal-body">
+        <div style="text-align:center; margin-bottom:10px;">
+          <img id="photoPreview" src="android-chrome-192x192.png" alt="preview"
+            style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:2px solid var(--primary-color)" />
+        </div>
+        <input type="file" id="photoInput" accept="image/*" />
+      </div>
+      <div class="modal-footer">
+        <button id="photoCancel" class="btn" style="background:#9ca3af">Cancel</button>
+        <button id="photoSave" class="btn">Save Photo</button>
+      </div>
+    </div>
+  </div>
+  <script>
+    // ----------------- Utility & UI handlers -----------------
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        e.preventDefault();
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+        const target = item.dataset.target;
+        document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
+        const el = document.getElementById(target);
+        if (el) el.classList.add('active');
+      });
+    });
+
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      document.body.classList.toggle('dark-theme');
+      const icon = document.querySelector('#themeToggle i');
+      icon.classList.toggle('fa-moon');
+      icon.classList.toggle('fa-sun');
+    });
+
+    const userMenuToggle = document.getElementById('userMenuToggle');
+    const userDropdown = document.getElementById('userDropdown');
+    userMenuToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      userDropdown.classList.toggle('show');
+    });
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('#userDropdown') && !e.target.closest('#userMenuToggle')) {
+        userDropdown.classList.remove('show');
+      }
+    });
+
+    document.getElementById('viewProfileBtn').addEventListener('click', () => {
+      alert('Name: Ishan Pandya\nEmail: Ishanpandya101@gmail.com');
+      userDropdown.classList.remove('show');
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.removeItem('userAvatar');
+      alert('You have been logged out.');
+      window.location.href = 'login.html';
+    });
+
+    // ----------------- Photo modal logic -----------------
+    const photoModal = document.getElementById('photoModal');
+    const openEditPhotoBtn = document.getElementById('openEditPhotoBtn');
+    const photoClose = document.getElementById('photoClose');
+    const photoCancel = document.getElementById('photoCancel');
+    const photoSave = document.getElementById('photoSave');
+    const photoInput = document.getElementById('photoInput');
+    const photoPreview = document.getElementById('photoPreview');
+    const userAvatar = document.getElementById('userAvatar');
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const saved = localStorage.getItem('userAvatar');
+      if (saved) {
+        userAvatar.src = saved;
+        photoPreview.src = saved;
+      }
+    });
+
+    openEditPhotoBtn.addEventListener('click', () => {
+      userDropdown.classList.remove('show');
+      photoModal.classList.add('show');
+    });
+    photoClose.addEventListener('click', () => photoModal.classList.remove('show'));
+    photoCancel.addEventListener('click', () => photoModal.classList.remove('show'));
+    photoInput.addEventListener('change', (e) => {
+      const f = e.target.files[0];
+      if (!f) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => photoPreview.src = ev.target.result;
+      reader.readAsDataURL(f);
+    });
+    photoSave.addEventListener('click', () => {
+      const f = photoInput.files[0];
+      if (!f) { alert('Please select a photo'); return; }
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const data = ev.target.result;
+        userAvatar.src = data;
+        localStorage.setItem('userAvatar', data);
+        photoModal.classList.remove('show');
+        alert('Profile photo updated');
+      };
+      reader.readAsDataURL(f);
+    });
+
+    // ----------------- Chart (dashboard) -----------------
+    let dashboardChartInstance = null;
+    async function loadDashboardDataAndChart(){
+      const entities = ['vendors','users','products','assets'];
+      const counts = {};
+      for (const e of entities){
+        try{
+          const res = await fetch(`http://localhost:5000/api/${e}`);
+          const data = await res.json();
+          counts[e] = Array.isArray(data) ? data.length : (data.length || 0);
+          const elId = `total${e.charAt(0).toUpperCase() + e.slice(1)}`;
+          const el = document.getElementById(elId);
+          if (el) el.textContent = counts[e];
+        }catch(err){
+          console.error('Failed to fetch', e, err);
+          counts[e] = 0;
+        }
+      }
+
+      const ctx = document.getElementById('dashboardChart').getContext('2d');
+      if (dashboardChartInstance) dashboardChartInstance.destroy();
+      dashboardChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Vendors','Users','Products','Assets'],
+          datasets: [{
+            label: 'Total Count',
+            data: [counts.vendors, counts.users, counts.products, counts.assets],
+            backgroundColor: ['#6366f1','#10b981','#f59e0b','#ef4444'],
+            borderRadius: 8
+          }]
+        },
+        options:{
+          responsive:true,
+          plugins: {
+            legend: { display:false },
+            title: { display:true, text:'Asset Management Overview', color:'#6b7280' }
+          },
+          scales:{
+            y: { beginAtZero:true, ticks:{ color:'#6b7280' } },
+            x: { ticks:{ color:'#6b7280' } }
+          }
+        }
+      });
+    }
+
+    // ----------------- CRUD logic -----------------
+    const crudModal = document.getElementById('crudModal');
+    const crudModalTitle = document.getElementById('crudModalTitle');
+    const crudModalBody = document.getElementById('crudModalBody');
+    const crudModalClose = document.getElementById('crudModalClose');
+    const crudCancel = document.getElementById('crudCancel');
+    const crudSave = document.getElementById('crudSave');
+
+    let crudCurrent = { entity:null, fields:[], mode:'add', id:null };
+
+    function openCrudModal(entity, fields, mode='add', item=null){
+      crudCurrent = { entity, fields, mode, id: item ? item._id : null };
+      crudModalTitle.textContent = (mode==='add' ? `Add ${entity.slice(0,-1)}` : `Edit ${entity.slice(0,-1)}`);
+      crudModalBody.innerHTML = '';
+      const form = document.createElement('div');
+      form.id = 'crudForm';
+      fields.forEach(f => {
+        const row = document.createElement('div');
+        row.className = 'form-group';
+        const label = document.createElement('label');
+        label.textContent = f.charAt(0).toUpperCase() + f.slice(1);
+        let input;
+        if (f.toLowerCase().includes('date')) input = document.createElement('input'), input.type='date';
+        else if (f.toLowerCase().includes('email')) input = document.createElement('input'), input.type='email';
+        else if (f.toLowerCase().includes('password')) input = document.createElement('input'), input.type='password';
+        else if (f.toLowerCase() === 'status') {
+          input = document.createElement('select');
+          ['Active','Inactive','Retired','Lost'].forEach(opt=>{
+            const o=document.createElement('option'); o.value=opt; o.textContent=opt; input.appendChild(o);
+          });
+        } else input = document.createElement('input'), input.type='text';
+        input.name = f;
+        input.value = item && item[f] != null ? item[f] : '';
+        row.appendChild(label); row.appendChild(input);
+        form.appendChild(row);
+      });
+      crudModalBody.appendChild(form);
+      crudModal.classList.add('show');
+    }
+
+    function closeCrudModal(){ crudModal.classList.remove('show'); crudCurrent={entity:null,fields:[],mode:'add',id:null}; }
+    crudModalClose.addEventListener('click', closeCrudModal);
+    crudCancel.addEventListener('click', closeCrudModal);
+
+    crudSave.addEventListener('click', async () => {
+      const form = document.getElementById('crudForm');
+      if (!form) return;
+      const inputs = form.querySelectorAll('input,select,textarea');
+      const payload = {};
+      inputs.forEach(inp => {
+        let val = inp.value;
+        const name = inp.name;
+        if (['price','quantity'].includes(name)) val = Number(val) || 0;
+        payload[name] = val;
+      });
+
+      const base = `http://localhost:5000/api/${crudCurrent.entity}`;
+      try{
+        let res;
+        if (crudCurrent.mode === 'add')
+          res = await fetch(base, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+        else
+          res = await fetch(`${base}/${crudCurrent.id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+        if (!res.ok) throw new Error('Server returned error');
+        closeCrudModal();
+        await refreshAll();
+      }catch(err){
+        console.error(err);
+        alert('Save failed. Check backend console.');
+      }
+    });
+
+    async function setupCrud(entity, fields, readOnly=false) {
+      const section = document.getElementById(entity);
+      if (!section) return;
+      const tbody = section.querySelector('tbody');
+      const apiBase = `http://localhost:5000/api/${entity}`;
+
+      if (!readOnly) {
+        const existingBtn = section.querySelector('.add-btn-js');
+        if (!existingBtn) {
+          const addBtn = document.createElement('button');
+          addBtn.className = 'btn add-btn-js';
+          addBtn.style.marginBottom = '10px';
+          addBtn.textContent = `+ Add ${entity.slice(0,-1).toUpperCase()}`;
+          addBtn.addEventListener('click', () => openCrudModal(entity, fields, 'add', null));
+          section.insertBefore(addBtn, section.querySelector('.table-container'));
+        }
+      }
+
+      async function loadAll(){
+        try{
+          const res = await fetch(apiBase);
+          const data = await res.json();
+          render(data || []);
+        }catch(err){
+          console.error('Failed load', entity, err);
+          tbody.innerHTML = `<tr><td colspan="${fields.length+2}">Failed to load</td></tr>`;
+        }
+      }
+
+      function render(items){
+        tbody.innerHTML = '';
+        items.forEach((item, i) => {
+          const tr = document.createElement('tr');
+          let html = `<td>${i+1}</td>`;
+          for (const f of fields) html += `<td>${item[f] ?? '-'}</td>`;
+          if (!readOnly) {
+            html += `<td>
+              <button class="btn" data-action="edit" data-id="${item._id}">✏️</button>
+              <button class="btn" data-action="delete" data-id="${item._id}">🗑️</button>
+            </td>`;
+          } else html += `<td>-</td>`;
+          tr.innerHTML = html;
+          tbody.appendChild(tr);
+        });
+
+        tbody.querySelectorAll('button[data-action]').forEach(btn=>{
+          const action = btn.dataset.action;
+          const id = btn.dataset.id;
+          if (action === 'edit') {
+            btn.addEventListener('click', async () => {
+              try{
+                const res = await fetch(`${apiBase}/${id}`);
+                const item = await res.json();
+                openCrudModal(entity, fields, 'edit', item);
+              }catch(err){ console.error(err); alert('Failed to load item for editing'); }
+            });
+          } else if (action === 'delete') {
+            btn.addEventListener('click', async () => {
+              if (!confirm('Delete this item?')) return;
+              try{
+                const res = await fetch(`${apiBase}/${id}`, { method:'DELETE' });
+                if (!res.ok) throw new Error('Delete failed');
+                await refreshAll();
+              }catch(err){
+                console.error(err); alert('Delete failed');
+              }
+            });
+          }
+        });
+      }
+      await loadAll();
+      return { loadAll };
+    }
+
+    async function refreshAll(){
+      await loadDashboardDataAndChart();
+      await setupCrud('vendors', ['name','email','phone','company']);
+      await setupCrud('products', ['name','category','price','vendor','quantity']);
+      await setupCrud('users', ['username','role','email','password']);
+      await setupCrud('assets', ['name','type','assignedTo','status','purchaseDate']);
+      await setupCrud('support', ['user','message','status','priority'], true);
+      await setupCrud('notifications', ['title','message','date','read'], true);
+      await setupCrud('recyclebin', ['itemType','itemId','deletedAt','reason'], true);
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await refreshAll();
+    });
+
+    async function loadRecycleBin(){
+      try{
+        const res = await fetch('http://localhost:5000/api/recyclebin');
+        const data = await res.json();
+        const tbody = document.querySelector('#recyclebin tbody');
+        tbody.innerHTML = '';
+        data.forEach((it, i) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${i+1}</td><td>${it.itemType ?? '-'}</td><td>${it.itemId ?? '-'}</td><td>${it.deletedAt ?? '-'}</td><td>${it.name ?? '-'}</td><td>-</td>`;
+          tbody.appendChild(tr);
+        });
+      }catch(err){ console.error('Failed to load recycle bin', err); }
+    }
+  </script>
+</body>
+</html>
